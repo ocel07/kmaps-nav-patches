@@ -21,11 +21,40 @@ Morphe Manager에 이 저장소를 패치 소스로 추가하거나, [Morphe Des
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
+> **[v1.0.0-dev.1](https://github.com/ocel07/kmaps-nav-patches/releases/tag/v1.0.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;2 patches total
+<details open>
+<summary>📦 KakaoMap&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
 
-| 패치 | 앱 | 내용 |
-|---|---|---|
-| NAVER Map high-rate GNSS | `com.nhn.android.nmap` 6.11.2.2 (6.10.0.16) | 72곳: 새 fix마다 맵매칭(최대 20 Hz), 시간 가중 카운터, 1 Hz 버퍼 게이트, 위치 요청 125 ms |
-| KakaoMap high-rate GNSS | `net.daum.android.map` 5.17.8 | 위치 SDK 최소 fix 간격 100→40 ms, origin 1 Hz 게이트, 맵매칭 결과 사슬 메모리 누수 제거 |
+**Package name:** `net.daum.android.map`
+
+**🎯 Supported versions:**
+
+| 5.17.8 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [KakaoMap high-rate GNSS](#kakaomap-high-rate-gnss) | Lets the location SDK use every GNSS fix (up to 25 Hz) while KNSDK keeps its 1 Hz origin rate, and fixes a map-matching result chain that leaked memory for the whole drive. |  |
+
+</details>
+
+<details open>
+<summary>📦 NAVER Map&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
+
+**Package name:** `com.nhn.android.nmap`
+
+**🎯 Supported versions:**
+
+| 6.11.2.2 | 6.10.0.16 |
+| :---: | :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [NAVER Map high-rate GNSS](#naver-map-high-rate-gnss) | Runs map matching on every new GNSS fix (max 20 Hz) with time-weighted counters and requests location updates every 125 ms. |  |
+
+</details>
 
 <!-- PATCHES_END -->
 
