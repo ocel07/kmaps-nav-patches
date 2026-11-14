@@ -1,14 +1,13 @@
-group = "app.template"
+group = "app.kmaps"
 
 patches {
-    // TODO: Update this section with your project details.
     about {
-        name = "UserXYZ Patches"
-        description = "Patches for apps I like"
-        source = "git@github.com:UserXYZ/morphe-patches.git"
-        author = "Awesome dev"
-        contact = "na"
-        website = "na"
+        name = "kmaps-nav-patches"
+        description = "High-rate GNSS (u-blox 10 Hz) patches for NAVER Map and KakaoMap car navigation"
+        source = "git@github.com:ocel07/kmaps-nav-patches.git"
+        author = "ocel07"
+        contact = "https://github.com/ocel07/kmaps-nav-patches/issues"
+        website = "https://github.com/ocel07/kmaps-nav-patches"
         license = "GPLv3"
     }
 }

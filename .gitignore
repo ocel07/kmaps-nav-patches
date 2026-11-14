@@ -132,3 +132,18 @@ node_modules/
 # Ignore IDEA files
 .idea/
 local.properties
+
+### kmaps-nav-patches
+__pycache__/
+*.py[cod]
+# app binaries and patch outputs never go into the repo
+*.apkm
+*.apks
+*.xapk
+*.idsig
+*.dex
+*.mpp
+*.keystore
+*.jks
+# local work (decompiled app code, scan output)
+work/
