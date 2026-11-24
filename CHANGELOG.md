@@ -1,3 +1,9 @@
+## [1.1.0-dev.1](https://github.com/ocel07/kmaps-nav-patches/compare/v1.0.1...v1.1.0-dev.1) (2026-11-24)
+
+### ✨ New Features
+
+* TMAP high-rate GNSS ([dd82d63](https://github.com/ocel07/kmaps-nav-patches/commit/dd82d635814b7ec8445fccb14447da7f534f0471))
+
 ## [1.0.1](https://github.com/ocel07/kmaps-nav-patches/compare/v1.0.0...v1.0.1) (2026-11-16)
 
 ### 🐛 Bug Fixes
