@@ -38,4 +38,16 @@ object Constants {
             AppTarget(version = "5.17.8", description = "APKMirror universal APK"),
         ),
     )
+
+    // APKMirror publishes TMAP as an APKM bundle (base + ABI + density + language splits).
+    val COMPATIBILITY_TMAP = Compatibility(
+        name = "TMAP",
+        packageName = "com.skt.tmap.ku",
+        apkFileType = ApkFileType.APKM,
+        appIconColor = 0x3B5CFF,
+        signatures = setOf("90351f2e6ce0c95c3696dde9c090e803c0a0d8e3d64ce53375c9c6003cf0f8e2"),
+        targets = listOf(
+            AppTarget(version = "11.8.4.4075"),
+        ),
+    )
 }
