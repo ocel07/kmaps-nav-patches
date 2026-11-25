@@ -1,3 +1,9 @@
+## [1.1.0-dev.2](https://github.com/ocel07/kmaps-nav-patches/compare/v1.1.0-dev.1...v1.1.0-dev.2) (2026-11-25)
+
+### ✨ New Features
+
+* Support KakaoMap 6.33.0 ([7ec861b](https://github.com/ocel07/kmaps-nav-patches/commit/7ec861bec11a3e501cad3bd86eb298d878bab72b))
+
 ## [1.1.0-dev.1](https://github.com/ocel07/kmaps-nav-patches/compare/v1.0.1...v1.1.0-dev.1) (2026-11-24)
 
 ### ✨ New Features
