@@ -1,11 +1,11 @@
 # kmaps-nav-patches
 
-High-rate GNSS patches for **NAVER Map**, **KakaoMap** and **TMAP** car navigation, for use with Morphe.
+High-rate GNSS patches for **NAVER Map** and **KakaoMap** car navigation, for use with Morphe.
 
-헤드유닛에 u-blox 수신기(F9R/F9P, 8~10 Hz)를 시스템 GPS로 붙였을 때, 네이버 지도·카카오맵·TMAP 차량 내비가 1 Hz보다 빠른 위치 갱신을 제대로 쓰도록 고치는 패치 묶음입니다.
-이 앱들에는 "위치 갱신 1회 = 1초"를 전제한 카운터·버퍼가 많습니다. 이 패치는 그런 지점을 경과 시간 기준으로 바꾸거나, 엔진 입력 주기를 원래대로 지킵니다.
+헤드유닛에 u-blox 수신기(F9R/F9P, 8~10 Hz)를 시스템 GPS로 붙였을 때, 네이버 지도와 카카오맵 차량 내비가 1 Hz보다 빠른 위치 갱신을 제대로 쓰도록 고치는 패치 묶음입니다.
+두 앱에는 "위치 갱신 1회 = 1초"를 전제한 카운터·버퍼가 많습니다. 이 패치는 그런 지점을 경과 시간 기준으로 바꾸거나, 엔진 입력 주기를 원래대로 지킵니다.
 
-> NAVER, Kakao, SK/TMAP Mobility, Morphe 프로젝트와 관계없는 개인 프로젝트입니다. 1 Hz 위치(일반 휴대폰 GPS)에서는 원본과 같게 동작하도록 만들었습니다.
+> NAVER, Kakao, Morphe 프로젝트와 관계없는 개인 프로젝트입니다. 1 Hz 위치(일반 휴대폰 GPS)에서는 원본과 같게 동작하도록 만들었습니다.
 
 ## 사용법
 
@@ -75,11 +75,6 @@ Morphe Manager에 이 저장소를 패치 소스로 추가하거나, [Morphe Des
 </details>
 
 <!-- PATCHES_END -->
-
-### TMAP 주의
-- TMAP 패치는 Java 외에 네이티브 내비 엔진 `libNavigationSDK.so`(arm64)도 고칩니다(fix 수로 세던 판정을 경과 시간으로). 그래서 **APKM 묶음 전체**를 넣어야 하고(base.apk만으로는 실패), 결과는 arm64 전용 단일 APK입니다.
-- TMAP의 SK T-ID 로그인 라이브러리는 앱 서명 해시를 로그인 요청에 넣습니다. 재서명한 앱에서 로그인이 될지는 서버 정책에 달려 있습니다(확인 안 됨).
-- 네이티브 패치 소스: `tools/tmap/src`(ARM64 어셈블리 + 빌드 스크립트), 적용 목록 `tools/tmap/navsdk_11.8.4.4075.json` → `patches/src/main/resources/tmap/`.
 
 ## 구조
 
