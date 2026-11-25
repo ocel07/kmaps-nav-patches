@@ -22,6 +22,11 @@ import app.morphe.patcher.patch.resourceFile
  *  J5  V2FilterConfig.maxConsecutiveReject: 20 rejections (= 20 s at 1 Hz) -> scaled to the gps rate
  *  J7  LocationPrioritySelector.selectBestLocation: equal priority kept the oldest queued fix -> newest
  *  J2  TmapNaviLocationManager.onLocationChanged: drop a fused fix while gps is flowing (extension UbxTmap.accept)
+ *
+ * Re-sign login (the patched APK is re-signed, so the SK T-ID login library's signature hash no longer matches
+ * what T-ID registered and login is refused):
+ *  S1  com.skt.tid.utils.Utils.getSignatures: return the original signing certificate (UbxTmap.signatures) so the
+ *      hash in the authorize-request deviceInfo is computed from the original cert for any nonce (docs/tmap/J_java.md).
  */
 
 private const val UT = "Lapp/kmaps/extension/tmap/UbxTmap;"
@@ -81,6 +86,18 @@ internal val TMAP_SITES: List<Site> = listOf(
             Op("I", 0, "invoke-static/range {p1 .. p1}, $UT->accept(Landroid/location/Location;)Z\nmove-result v0\nif-nez v0, :ubx_go\nreturn-void"),
         ),
         labels = mapOf("ubx_go" to ("K" to "0")),
+    ),
+    Site(
+        cls = "Lcom/skt/tid/utils/Utils;", note = "S1 original signing cert for T-ID login", count = 1,
+        desc = "(Ljava/lang/String;Landroid/content/pm/PackageManager;)[Landroid/content/pm/Signature;",
+        // Utils.getSignatures reads the live SigningInfo; redirect it to the original certificate. The rest of
+        // the original body becomes unreachable after the return. getAppHashKey / getAppKeyHashValue both funnel
+        // through here, so every signature hash in the T-ID auth request is computed from the original cert.
+        anchor = listOf("const/high16 *, 0x8000000"),
+        ops = listOf(
+            Op("R", 0, "invoke-static {}, $UT->signatures()[Landroid/content/pm/Signature;\nmove-result-object {A0}\nreturn-object {A0}"),
+        ),
+        labels = emptyMap(),
     ),
 )
 
