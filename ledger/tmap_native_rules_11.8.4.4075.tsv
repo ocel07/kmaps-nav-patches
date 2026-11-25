@@ -1,0 +1,86 @@
+# TMAP 11.8.4.4075 native ledger rules (2026-11-25): libNavigationSDK.so = 기존 엔진(docs/tmap/N2_navsdk.md, N2_patch.md),
+# libtmapnavigationengine.so = 새 엔진(docs/tmap/N1_newengine.md). 새 엔진은 숨은 설정 전용이라 전부 INACTIVE(ref = N1 항목 E*).
+# 키 = kind, <lib>:<함수(오버로드면 인자 포함)>, 멤버 오프셋/전역/상수, 세부, n. 주소는 정보 열(addr)에만. 후보는 tools/scan_native_ida.py.
+kind	class	desc	detail	n	verdict	ref	reason
+# 패치 지점: navsdk_<ver>.json 항목마다 한 행, ID = 행의 patch_id 열
+PATCH	NavigationSDK:**	*	*	*	PATCHED	@patch_id	libNavigationSDK.so 바이트 패치 항목(tools/tmap/navsdk_11.8.4.4075.json)
+COUNTER	NavigationSDK:CNaviModule::MapMatch(NMEA_DateTime,int)	+0x3e0	inc	*	PATCHED	N2-10	경로 궤적 파일 쓰기 카운터(fix 210개마다) → cave_trk 경과 ms 기준
+COUNTER	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0xac	+1	*	PATCHED	N2-2	이탈 연속 판정 카운터 → +w ms
+COUNTER	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0xac	+2	*	PATCHED	N2-2	이탈 연속 판정 카운터(정확도 좋고 차이 큼) → +2w ms
+CTRCMP	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0xac	cmp #4	*	PATCHED	N2-2	이탈 임계 4 fix → 4000 ms
+CTRCMP	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0xac	cmp #3	*	PATCHED	N2-2	이탈 임계 3 fix → 3999 ms
+COUNTER	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0x988	inc	*	PATCHED	N2-3	고속도로 예외 카운터 min(c+1,300) → cave_hwinc +w, 상한 300000
+CTRCMP	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0x988	cmp #300	*	PATCHED	N2-3	고속도로 예외 카운터 상한 300 fix → 300000 ms
+CTRCMP	NavigationSDK:NcRouteMatchEX::CheckHighwayDrivingException(void)	+0x988	cmp #31	*	PATCHED	N2-3	고속도로 예외 31 fix → cave_hde 31000 ms
+COUNTER	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0x4d0	+1	*	PATCHED	N2-4	음영 모드 경로 확정 카운터 → cave_shade +w ms
+CTRCMP	NavigationSDK:NcRouteMatchEX::MapMatching(tagNsGpsParsedData *,int)	+0x4d0	cmp #9	*	PATCHED	N2-4	음영 확정 10 fix(fix당 9 m 이하) → 10000 ms, 초당 10 m
+COUNTER	NavigationSDK:NcRouteMatchEX::SetGpsParsedData	+0x7cc	+r	*	PATCHED	N2-5	총 주행거리 정수 m 누적(fix당 2 m 이상) → cave_odo 소수 이월, 초당 2 m 게이트
+COUNTER	NavigationSDK:NcRouteMatchEX::SetGpsParsedData	+0x7d0	+r	*	PATCHED	N2-5	경로 위 주행거리 누적 → cave_odo
+COUNTER	NavigationSDK:NcLocalMatch::SetGpsParsedData	+0x56c	+r	*	OK	N2-5	같은 패턴의 거리 누적이지만 읽는 곳 없음(관찰)
+COUNTER	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	+0x320	+1	*	PATCHED	N2-7	구간단속 종점 통과 유예 3 fix → stub_sdia +w
+CTRCMP	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	+0x320	cmp #2	*	PATCHED	N2-7	구간 종료 임계 2 → 2000 ms
+COUNTER	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	global	+1	*	PATCHED	N2-7	경로/비경로 모드 변경 디바운스 전역 카운터 → stub_sdib +w, 임계 1000 ms
+COUNTER	NavigationSDK:NcMapMatch::MakeVirtualGPS(tagNsGpsParsedData *,int,uint)	+0x74	+1	*	OK	N2-11	가상 GPS 큐(1240칸) 개수. 큐 조회 API는 Java 미사용, 궤적 쓰기는 N2-10
+COUNTER	NavigationSDK:NcMapMatch::MakeVirtualGPS(tagNsGpsParsedData *,int,uint)	+0x78	inc	*	OK	N2-11	가상 GPS 큐 쓰기 위치(링 인덱스)
+COUNTER	NavigationSDK:NcBaseMatch::AddGpaData	+0x48	inc	*	OK	N2-6	이력 링(20칸) 인덱스. 2 m 거리 솎기로 10 Hz에서도 스스로 솎아짐
+COUNTER	NavigationSDK:NcGpsDrawDataQueue::AddTail(tagNsGpsDrawData *)	+0x2c	+1	*	OK	N2-12	디버그 그리기 큐 링 인덱스(표시 전용)
+COUNTER	NavigationSDK:CNaviModule::UpdateVertexTraceInfo(tagTvsData *,tagNsGpsParsedData *)	+0x508	+1	*	OK	N2-11	정점 궤적: 정점 통과 이벤트 수
+COUNTER	NavigationSDK:CNaviModule::UpdateVertexTraceInfo(tagTvsData *,tagNsGpsParsedData *)	+0x6ac	+r	*	OK	N2-11	정점 궤적: 초 단위 시각 차 누적(시간 기준)
+COUNTER	NavigationSDK:CRGPlayer::ApplyRearCameraSdiPostProcess(tagNsMatchingData const*,tagRGDriveInfo *)	+0x3ae0	+1	*	OK	N2-13	최근 카메라 4개 링 인덱스(카메라 통과 이벤트)
+CTRCMP	NavigationSDK:CRGPlayer::ApplyRearCameraSdiPostProcess(tagNsMatchingData const*,tagRGDriveInfo *)	+0x3ae0	cmp #3	*	OK	N2-13	링 크기 4 경계
+COUNTER	NavigationSDK:CRGPlayer::SetNearPoint(ushort,ushort,tagNsMatchingData const*,int &)	+0x0	+r	*	OK		출력 인자(int&)에 앞쪽 거리 누적, 70 m 한도(기하 계산, fix 수 아님)
+CTRCMP	NavigationSDK:CRGPlayer::SetNearPoint(ushort,ushort,tagNsMatchingData const*,int &)	+0x0	cmp #70	*	OK		앞쪽 70 m 거리 한도
+COUNTER	NavigationSDK:NcVoiceService::SetPrevPlusAndoGP(tagDOUBLE_VERTEX,tagDOUBLE_VERTEX*,int,int)	+0x6f0	+1	*	OK		안내점 배열 채우기 인덱스(20칸), 경로 데이터 기준
+CTRCMP	NavigationSDK:NcVoiceService::SetPrevPlusAndoGP(tagDOUBLE_VERTEX,tagDOUBLE_VERTEX*,int,int)	+0x6f0	cmp #20	*	OK		배열 크기 20 경계
+COUNTER	NavigationSDK:NcVoiceService::ScenarioQueueAddTail(int,int)	+0x7cc	+1	*	OK		음성 시나리오 큐 개수(안내 이벤트)
+COUNTER	NavigationSDK:NcVoiceService::ScenarioQueueAddTail(int,int)	+0x7d0	inc	*	OK		음성 시나리오 큐 쓰기 위치(링)
+COUNTER	NavigationSDK:RTree<LinkInfo *,double,2,float,8,4>::Search(RTree<LinkInfo *,double,2,float,8,4>::Node *,RTree<LinkInfo *,double,2,float,8,4>::Rect *,int &,bool (*)(LinkInfo *,void *),void *)	+0x0	+1	*	OK		RTree 검색 결과 개수(1회 검색 안)
+COUNTER	NavigationSDK:sub<LocalLinkV2::getNearLinkFromCacheTile(std::__ndk1::vector<tagNearLinkSearchInfo,std::__ndk1::allocator<tagNearLinkSearchInfo>> *,int,int,int,int,int)>	+0x10	+1	*	OK		std 컨테이너 크기(인라인된 삽입)
+COUNTER	NavigationSDK:sub<sub<CMmCacheV2::GetCacheCopyData(uint)>>	+0x10	+r	*	OK		std 컨테이너 크기(캐시 복사)
+COUNTER	NavigationSDK:sub<sub<NcLocalMatch::ICalcLocalMatching(int)>>	+0x10	+8	*	OK		std::vector 끝 포인터(+8 B = 원소 1개)
+COUNTER	NavigationSDK:sub<sub<sub<NcLocalMatch::ICalcLocalMatching(int)>>>	+0x10	+8	*	OK		std::vector/deque 끝 포인터
+COUNTER	NavigationSDK:sub<sub<sub<NcLocalMatch::ICalcLocalMatching(int)>>>	+0x8	-8	*	OK		std::deque 앞 포인터
+ONE_SEC	NavigationSDK:CNaviController::InputLocationData(float,double,float,long,double,double,char const*,float,long long,int,float,int,bool)	f3600	fmul	*	OK		JNI 입력 속도 m/s → km/h(×3600/1000)
+ONE_SEC	NavigationSDK:CNaviController::InputLocationData(float,double,float,long,double,double,char const*,float,long long,int,float,int,bool)	f1000	fdiv	*	OK		JNI 입력 속도 m/s → km/h(×3600/1000)
+ONE_SEC	NavigationSDK:CNaviModule::ReceiveGps(NMEA *,NMEA_ID)	int1000	madd	*	INACTIVE		NMEA 입력 경로(Java는 InputLocationData만 씀), 시각 → ms 변환
+ONE_SEC	NavigationSDK:NcMapMatch::ICalcMapMatching(tagNsGpsParsedData *,int,int,int)	int1000	arg	*	PATCHED	N2-1	가상 GPS 전진 시간 1000 ms 고정 → stub_w3 (w ms)
+ONE_SEC	NavigationSDK:NcMapMatch::MakeVirtualGPS(tagNsGpsParsedData *,int,uint)	f3.6	fmul	*	PATCHED	N2-1	가상 GPS 이동거리 = 속도/3.6 × 전진 시간(패치 뒤 a3 = w)
+ONE_SEC	NavigationSDK:NcBaseMatch::AddGpaData	f1/3.6	fmul	*	OK	N2-6	속도 8 km/h 기준 변환, 초 단위 dt 저속 분기
+ONE_SEC	NavigationSDK:CRGPlayer::ApplyRearCameraSdiPostProcess(tagNsMatchingData const*,tagRGDriveInfo *)	f3.6	fmul	*	OK	N2-13	카메라 거리 기준 속도 변환(이벤트)
+ONE_SEC	NavigationSDK:CRGPlayer::GetAndoDriveInfo(tagNsMatchingData const*,std::__ndk1::weak_ptr<LocalLinkV2>)	int1000	store	*	OK		앞쪽 링크 조회 거리 1000 m
+ONE_SEC	NavigationSDK:CRGPlayer::GetGoalInfo(int,tagNsMatchingData const*,int,uint,tagRGDriveInfo *)	int1000	cmp	*	OK		목적지까지 남은 거리 1000 m 비교
+ONE_SEC	NavigationSDK:CRGPlayer::IsPeriodicReRouteArea(int,int,tagRGDriveInfo *)	int1000	cmp	*	OK	N2-13	주기 재탐색 구역: 거리·시간 기준
+ONE_SEC	NavigationSDK:LocalLinkV2::getAheadLinkList(uint,int,int,std::__ndk1::vector<long long,std::__ndk1::allocator<long long>> &,std::__ndk1::vector<tagLinkInfoForCITS,std::__ndk1::allocator<tagLinkInfoForCITS>> &)	int1000	cmp	*	OK		앞쪽 링크 거리 1000 m 한도
+ONE_SEC	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	int1000	madd	*	OK	N2-7	GPS 시각 h:m:s → ms(구간 경과시간은 시각 차 기준)
+ONE_SEC	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	f1000	fmadd	*	OK	N2-7	difftime ×1000, 경과 ms → s
+ONE_SEC	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	f3.6	fmul	*	OK	N2-7	구간 평균속도 = 거리/경과시간 ×3.6
+ONE_SEC	NavigationSDK:CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)	f3.6	fdiv	*	OK	N2-7	이동거리 += 경과 s × 속도/3.6 (시간 기준)
+ONE_SEC	NavigationSDK:sub<CSafeDriveInfomation::GetSDIInfo(tagTvsData *,tagGatheringData *,int,tagNsMatchingData *,tagRGDriveInfo *,int)>	f3.6	fmul	*	OK	N2-7	평균속도 계산 도우미(거리/시간)
+ONE_SEC	NavigationSDK:CSafeDriveInfomation::ConvertGPSNmeaMillisecond(void)	int1000	madd	*	OK	N2-7	GPS 시각 → ms
+ONE_SEC	NavigationSDK:CSafeDriveInfomation::GetAndoSDIInfo(tagNsMatchingData *,LocalLinkV2 *,tagRGDriveInfo *,tagSDL_mutex *)	int1000	smaddl	*	OK	N2-7	GPS 시각 → ms
+ONE_SEC	NavigationSDK:SectionSpeedMonitor::StartMonitoring(SectionSpeedCameraData *,long,int)	f1000	fmul	*	OK	N2-8	이탈 시간 초과 = 구간길이/제한속도(ms 환산)
+ONE_SEC	NavigationSDK:SectionSpeedMonitor::StartMonitoring(SectionSpeedCameraData *,long,int)	f3600	fdiv	*	OK	N2-8	이탈 시간 초과 = 구간길이/제한속도(ms 환산)
+ONE_SEC	NavigationSDK:SectionSpeedMonitor::Update(tagDOUBLE_VERTEX const&,int,int,double,long,int,int,int,int,int,SectionSegmentContext const&)	f1000	fmul	*	OK	N2-8	ms 기준 시간 계산
+ONE_SEC	NavigationSDK:SectionSpeedMonitor::Update(tagDOUBLE_VERTEX const&,int,int,double,long,int,int,int,int,int,SectionSegmentContext const&)	f3600	fdiv	*	OK	N2-8	ms 기준 시간 계산
+ONE_SEC	NavigationSDK:DistanceCalculator::CalculateRemainingDistance(int,int,int,int,SectionSegmentContext const&,long)	f1000	fdiv	*	OK	N2-8	ms → s 환산
+ONE_SEC	NavigationSDK:SpeedCalculator::Update(double,double,double,long,int,int,int,int,int)	f1000	fdiv	*	OK	N2-8	평균속도 = Δ거리/Δms
+ONE_SEC	NavigationSDK:NcVoiceService::SDIService(int,int,tagRGDriveInfo *)	int1000	mul	*	OK		카메라 알림: 남은 거리 ≤ 속도×1000/3600 + 10 m(1 s 앞 예측, 한 번만 울림, N1 E9와 같음)
+ONE_SEC	NavigationSDK:wgs2bessel	f3600	fdiv	*	OK		좌표계 변환(도·분·초)
+COUNTER	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x61c	+r	*	INACTIVE	E1	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 애매한 매칭 fix마다 +1/+2, 4 이상이면 재탐색. 켜면 시간 가중 필요
+CTRCMP	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x61c	cmp #4	*	INACTIVE	E1	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 재탐색 임계 4 fix
+COUNTER	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x618	inc	*	INACTIVE	E2	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 깨끗한 매칭 카운터 +1, 상한 300
+CTRCMP	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x618	cmp #300	*	INACTIVE	E2	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 상한 300 fix
+COUNTER	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x618	+r	*	INACTIVE	E3	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 고속도로 예외 유예 차감(fix마다 acc−35 또는 −5, 인라인)
+CTRCMP	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x618	cmp #30	*	INACTIVE	E3	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 유예 임계 30 fix
+COUNTER	tmapnavigationengine:MapMatch::GetMapMatchResult(InputLocationData &,std::__ndk1::vector<VertexInfo *,std::__ndk1::allocator<VertexInfo *>> &,tagNsMatchingData &)	+0x18	+1	*	INACTIVE	E16	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). std::map 크기(인라인된 삽입)
+COUNTER	tmapnavigationengine:RouteGuidanceResult::GetDriveInfo(RouteDataWrapper *,int,tagNsMatchingData const&,tagRGDriveInfo &)	+0x10	+1	*	INACTIVE	E16	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). std::map 크기(인라인된 삽입)
+COUNTER	tmapnavigationengine:RTree<VertexInfo *,double,2,double,8,4>::Search(RTree<VertexInfo *,double,2,double,8,4>::Node *,RTree<VertexInfo *,double,2,double,8,4>::Rect *,int &,bool (*)(VertexInfo *,void *),void *)	+0x0	+1	*	INACTIVE		새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). RTree 검색 결과 개수
+COUNTER	tmapnavigationengine:DangerAreaInfomation::GetDAInfo(RouteDataWrapper *,int,tagRGDriveInfo *,VertexInfo const*,tagNsMatchingData const&)	+0x24	+r	*	INACTIVE	E12	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 구간 경과 시각 차 누적(시간 기준)
+ONE_SEC	tmapnavigationengine:DangerAreaInfomation::GetDAInfo(RouteDataWrapper *,int,tagRGDriveInfo *,VertexInfo const*,tagNsMatchingData const&)	f3.6	fdiv	*	INACTIVE	E12	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 거리 += dt × 속도/3.6 (시간 기준)
+ONE_SEC	tmapnavigationengine:DangerAreaInfomation::GetDAInfo(RouteDataWrapper *,int,tagRGDriveInfo *,VertexInfo const*,tagNsMatchingData const&)	f3.6	fmul	*	INACTIVE	E12	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 평균속도 = 거리×3.6/경과
+ONE_SEC	tmapnavigationengine:RouteDataWrapper::GetAutoDrivePosition(int,int,int,int,tagDOUBLE_VERTEX &,int &,int &)	f3.6	fdiv	*	INACTIVE	E8	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). dummy fix(1000 ms 고정)마다 속도×1 s 전진
+ONE_SEC	tmapnavigationengine:RouteGuidance::GetLaneInfo(RouteDataWrapper *,int,tagLane *,tagNsMatchingData const&,std::__ndk1::map<int,VertexInfo const*,std::__ndk1::less<int>,std::__ndk1::allocator<std::__ndk1::pair<int const,VertexInfo const*>>> &)	int1000	cmp	*	INACTIVE		새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 차로 정보 거리 1000 m 한도
+ONE_SEC	tmapnavigationengine:RouteGuidanceVoice::SDIService(int,int)	int1000	mul	*	INACTIVE	E9	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 카메라 알림 1 s 앞 예측(한 번만)
+COUNTER	tmapnavigationengine:RouteGuidanceVoice::SDIService(int,int)	+0x228	+1	*	INACTIVE	E15	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 알린 SDI 링(20칸) 인덱스(이벤트)
+CTRCMP	tmapnavigationengine:RouteGuidanceVoice::SDIService(int,int)	+0x228	cmp #20	*	INACTIVE	E15	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 링 크기 20
+COUNTER	tmapnavigationengine:RouteGuidanceVoice::MakeSdiSpeedBlock_MID_Voice(int)	+0x234	+1	*	INACTIVE	E11	새 엔진(숨은 개발자 설정 DATA_USE_PROTOBUF_RP에서만 켜짐, 기본 꺼짐). 구간단속 중간 안내 4000 m마다(거리 기준)

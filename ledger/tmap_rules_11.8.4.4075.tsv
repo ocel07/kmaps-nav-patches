@@ -1,0 +1,71 @@
+# TMAP 11.8.4.4075 Java ledger rules (2026-11-25): 판정 근거 docs/tmap/J_java.md (J1~J30, 6절 탐지 후보 판정).
+# 엔진 SDK(com/skt/tmap/engine/navigation/**)는 클래스 이름이 남아 있고 SourceFile이 지워져 클래스 경로가 키,
+# 앱 패키지의 난독화 클래스(com/skt/tmap/location/m 등)는 원래 소스 파일 이름 src:TmapNaviLocationManager.java가 키(scan_smali --srcmap).
+# 내비 경로는 정확한 키(n만 *), 범위 밖(도보·안경·도착 알림·AI 비서·마케팅·네트워크·GMS)만 파일/패키지 와일드카드.
+kind	class	desc	detail	n	verdict	ref	reason
+# 패치 지점: export_patches_morphe.py --app tmap (TmapPatch.kt TMAP_SITES), ID = note 첫 단어
+PATCH	*	*	*	*	PATCHED	@patch_id	TmapPatch.kt TMAP_SITES 지점
+# 범위 밖
+*	lib:com.google.android.gms:play-services-location	*	*	*	OUT		GMS 위치 라이브러리 내부
+*	src:AppManager.java	*	*	*	OUT		androidx.car.app: Android Auto 호스트 위치 전달(1000 ms). 헤드유닛 내비 경로 아님
+*	src:DestinationAlarmService.kt	*	*	*	OUT		도착 알림 라이브러리(destinationalarmlib)
+*	src:GlassesLocationService.kt	*	*	*	OUT		AI 안경 기능 위치 서비스
+*	src:TransitPedestrianActivity.kt	*	*	*	OUT		대중교통 도보 안내
+*	src:WalkMapMatchDebugController.kt	*	*	*	OUT		도보 맵매칭 디버그 화면
+*	com/tmapmobility/transit/**	*	*	*	OUT		대중교통 도보 안내(난독화 클래스)
+*	src:LocationManager.kt	*	*	*	OUT		A. (adot) AI 비서 SDK 위치 관리자(com/tmapmobility/adot)
+*	com/moengage/**	*	*	*	OUT		MoEngage 마케팅 SDK
+*	com/skt/wifiagent/**	*	*	*	OUT		Wi-Fi 에이전트 GPS 서비스(2000 ms)
+*	src:TmapReportLocationService.kt	*	*	*	OUT		위치 리포트 서비스(5000 ms Fused, 12개 묶음 업로드). 차량 내비 경로 아님
+*	com/skt/tmap/engine/navigation/network/**	*	*	*	OUT		네트워크(재시도·헤더·타임아웃)
+*	com/skt/tmap/engine/navigation/jamming/**	*	*	*	OUT	J27	GPS 재밍 구역 통계 → JammingStatsReporter 업로드만(상태 소비자 없음)
+*	src:TunnelModelManager.kt	*	*	*	OUT		터널 모델 다운로드 실패 재시도 횟수(네트워크)
+# 내비 경로(정확한 키)
+WINDOW	src:TmapRouteRepository.kt	()V	size ge 10	*	OK	J30	재탐색 이벤트 횟수(10분 10회), fix 수와 무관
+WINDOW	src:TmapRouteRepository.kt	()V	size lt 10	*	OK	J30	재탐색 이벤트 횟수(10분 10회), fix 수와 무관
+COUNTER	src:TmapRouteRepository.kt	(<RGData.java>)V	I+1	*	OK	J30	같은 자리 주기 재탐색 6회(이벤트)
+TIMER	src:LockableHandler.java	(Landroid/os/Message;)V	Handler;->postDelayed	*	OK		잠금 중 메시지 재전송 유틸, fix 무관
+COUNTER	com/skt/tmap/engine/navigation/TrafficSignalInfoRepository	()V	I-1	*	OK	J26	1000 ms 코루틴 루프에서 신호 잔여초 −1(시간 기준)
+COUNTER	com/skt/tmap/engine/navigation/livedata/ObservableDrivingData	(<NddsDataType.java>)V	I+1	*	OK		재탐색 완료 이벤트 횟수
+COUNTER	com/skt/tmap/engine/navigation/livedata/ObservableDrivingData	(<RGData.java>)V	I+1	*	OK	J25	maxSpeed+1 비교(카운터 아님)
+TIMER	com/skt/tmap/engine/navigation/location/AutoDriveLocationProvider	(I)V	ScheduledExecutorService;->scheduleWithFixedDelay	*	INACTIVE		모의 주행(autoDrive) 공급자
+COUNTER	com/skt/tmap/engine/navigation/location/CsvFileReader	()V	I+1	*	INACTIVE		CSV 파일 재생(히든 설정 3)
+LOCREQ	com/skt/tmap/engine/navigation/location/FusedLocationProvider	(I)Lcom/google/android/gms/location/LocationRequest;	LocationRequest$Builder;-><init>	*	INACTIVE		SDK 쪽 Fused 공급자. 앱은 location.c(FusedLocationProvider.kt)를 씀(SDK 외부 연동용)
+LOCREQ	com/skt/tmap/engine/navigation/location/FusedLocationProvider	(I)Lcom/google/android/gms/location/LocationRequest;	LocationRequest$Builder;->setPriority	*	INACTIVE		SDK 쪽 Fused 공급자. 앱은 location.c(FusedLocationProvider.kt)를 씀(SDK 외부 연동용)
+LOCREQ	com/skt/tmap/engine/navigation/location/FusedLocationProvider	(I)Lcom/google/android/gms/location/LocationRequest;	LocationRequest$Builder;->build	*	INACTIVE		SDK 쪽 Fused 공급자. 앱은 location.c(FusedLocationProvider.kt)를 씀(SDK 외부 연동용)
+LOCREQ	com/skt/tmap/engine/navigation/location/FusedLocationProvider	()V	FusedLocationProviderClient;->removeLocationUpdates	*	INACTIVE		SDK 쪽 Fused 공급자. 앱은 location.c(FusedLocationProvider.kt)를 씀(SDK 외부 연동용)
+LOCREQ	com/skt/tmap/engine/navigation/location/FusedLocationProvider	(I)V	FusedLocationProviderClient;->requestLocationUpdates	*	INACTIVE		SDK 쪽 Fused 공급자. 앱은 location.c(FusedLocationProvider.kt)를 씀(SDK 외부 연동용)
+LOCREQ	com/skt/tmap/engine/navigation/location/FusedLocationProvider	()V	FusedLocationProviderClient;->getLastLocation	*	INACTIVE		SDK 쪽 Fused 공급자. 앱은 location.c(FusedLocationProvider.kt)를 씀(SDK 외부 연동용)
+LOCREQ	com/skt/tmap/engine/navigation/location/GpsProvider	(I)V	LocationManager;->requestLocationUpdates	*	PATCHED	J1	gps 요청 1000 ms 고정(인자 무시) → 100 ms
+LOCREQ	com/skt/tmap/engine/navigation/location/GpsProvider	()V	LocationManager;->requestLocationUpdates	*	OK		1회 요청(0 ms)
+COUNTER	com/skt/tmap/engine/navigation/location/KalmanLocationFilter	(Landroid/location/Location;ZDDF)Z	I+1	*	OK	J24	SAFE_DRIVE 전용 칼만, 예측 dt = 실제 시각 차(초기 수렴 횟수만)
+WINDOW	com/skt/tmap/engine/navigation/location/LocationReliabilityChecker	(Landroid/location/Location;)V	size le 10	*	OK	J17	미패치(낮음): 거부 fix 버퍼 10개(10 s → 1 s 분량). 나이 가중은 시간 기준
+WINDOW	com/skt/tmap/engine/navigation/location/LocationReliabilityChecker	()Z	size lt 3	*	OK	J17	미패치(낮음): 통계 복구 최소 3개(10 s 거부 뒤, 시간 조건 먼저)
+COUNTER	com/skt/tmap/engine/navigation/location/LocationReliabilityCheckerV2	(Landroid/location/Location;Ljava/lang/String;Z)Z	I+1	*	PATCHED	J5	연속 거부 20회 강제 수용 → getMaxConsecutiveReject를 gps 주기로 환산(UbxTmap.perSecond)
+COUNTER	com/skt/tmap/engine/navigation/location/SpeedSmoother	(Landroid/location/Location;)F	I+1	*	OK	J16	smoothingAppliedCount는 로그용. EMA 표본 단위(J16)는 미패치(낮음)
+TIMER	com/skt/tmap/engine/navigation/location/TmapLocationManager	()V	Handler;->postDelayed	*	OK		리스너 제거 뒤 100 ms 지연 처리
+TIMER	com/skt/tmap/engine/navigation/location/TmapLocationManager	(Lcom/skt/tmap/engine/navigation/location/TmapLocationManager$OnLocationRequestComplete;)V	Timer;->schedule	*	OK		현재 위치 1회 요청 30 s 타임아웃
+TIMER	com/skt/tmap/engine/navigation/location/TmapLocationManager	(Z)V	Handler;->postDelayed	*	OK	J23	마지막 fix 뒤 1 s/2 s에 dummy(시간 기준)
+TIMER	com/skt/tmap/engine/navigation/location/gpsblocklog/BlockDetector	()V	Handler;->postDelayed	*	OK		GPS 끊김 감시 타이머(ms 기준, fix마다 재무장). 로그 전용
+COUNTER	com/skt/tmap/engine/navigation/location/gpsblocklog/BlockDetector	(JLjava/lang/String;)V	I+1	*	OUT		GPS 끊김 로그 통계 카운트
+TIMER	com/skt/tmap/engine/navigation/location/gpsblocklog/BlockDetector	(JLjava/lang/String;)V	Handler;->postDelayed	*	OK		GPS 끊김 감시 타이머(ms 기준, fix마다 재무장). 로그 전용
+COUNTER	com/skt/tmap/engine/navigation/location/gpsblocklog/BlockDetector	(JLjava/lang/String;Z)V	I+1	*	OUT		GPS 끊김 로그 통계 카운트
+TIMER	com/skt/tmap/engine/navigation/location/gpsblocklog/BlockDetector	(JLjava/lang/String;Z)V	Handler;->postDelayed	*	OK		GPS 끊김 감시 타이머(ms 기준, fix마다 재무장). 로그 전용
+TIMER	com/skt/tmap/engine/navigation/location/gpsblocklog/BlockDetector	(Lcom/skt/tmap/engine/navigation/location/gpsblocklog/TriggerType;<DriveMode.java>)V	Handler;->postDelayed	*	OK		GPS 끊김 감시 타이머(ms 기준, fix마다 재무장). 로그 전용
+COUNTER	src:LowPassFilter.kt	(F)V	I+1	*	OK	J14	고정 크기 링(size/head). 표본 창 5(J14 터널 진입 속도, J15 자동 줌)는 미패치(낮음)
+WINDOW	com/skt/tmap/engine/navigation/util/PeakDataDetector	(Ljava/util/List;)Z	size ge 3	*	OUT	J28	GPSJumpingMonitor 로그 전용
+WINDOW	com/skt/tmap/engine/navigation/util/PeakDataDetector	(Ljava/util/List;)Z	size ne 3	*	OUT	J28	GPSJumpingMonitor 로그 전용
+COUNTER	src:ActivityTypeCorrector.kt	(FI)I	I+1	*	OK	J21	>15 km/h 3회 연속이면 VEHICLE 확정. 10 Hz에서 0.3 s, 결과가 차량이라 해 없음
+LOCREQ	src:FusedLocationProvider.kt	()V	FusedLocationProviderClient;->removeLocationUpdates	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+LOCREQ	src:FusedLocationProvider.kt	(I)V	FusedLocationProviderClient;->getLastLocation	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+LOCREQ	src:FusedLocationProvider.kt	(I)V	LocationRequest$Builder;-><init>	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+LOCREQ	src:FusedLocationProvider.kt	(I)V	LocationRequest$Builder;->setPriority	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+LOCREQ	src:FusedLocationProvider.kt	(I)V	LocationRequest$Builder;->build	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+LOCREQ	src:FusedLocationProvider.kt	(I)V	FusedLocationProviderClient;->requestLocationUpdates	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+LOCREQ	src:FusedLocationProvider.kt	()V	FusedLocationProviderClient;->getLastLocation	*	PATCHED	J2	앱 Fused 1000 ms(HIGH_ACCURACY) 요청은 그대로, gps가 흐르는 동안 fused fix는 J2(UbxTmap.accept)가 버림
+TIMER	src:GpsPositionInterpolator.java	()V	Timer;->scheduleAtFixedRate	*	OK	J22	GpsPositionInterpolator 33 ms Timer, 구간 길이 = 실제 도착 간격(시간 기준)
+WINDOW	src:TmapNaviLocationManager.java	(Landroid/location/Location;)V	size le 80	*	OUT	J28	GoldenEye 수집 80표본 묶음(원격 설정, 로그·업로드)
+WINDOW	src:TmapNaviLocationManager.java	(Landroid/location/Location;)V	size eq 80	*	OUT	J28	GoldenEye 수집 80표본 묶음(원격 설정, 로그·업로드)
+TIMER	src:TmapNaviLocationManager.java	(Lcom/skt/tmap/engine/navigation/location/TmapLocationManager$OnLocationRequestComplete;)V	Timer;->schedule	*	OK		현재 위치 1회 요청 10 s 타임아웃
+WINDOW	src:TmapTunnelLocationAnalyzer.kt	(Landroid/content/Context;Landroid/location/Location;I)V	size le 5	*	OK	J13	미패치(낮음): 터널 이탈 뒤 속도 표본 5개면 터널 종료(5 s → 0.5 s). 터널 로그·센서만, 안내 무관
+WINDOW	src:TmapTunnelLocationAnalyzer.kt	(Landroid/content/Context;Landroid/location/Location;I)V	size lt 5	*	OK	J13	미패치(낮음): 터널 이탈 뒤 속도 표본 5개면 터널 종료(5 s → 0.5 s). 터널 로그·센서만, 안내 무관

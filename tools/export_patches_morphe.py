@@ -1,6 +1,6 @@
 """Export the Morphe NAVER patch sites as ledger rows (kind PATCH).
 
-usage: export_patches_morphe.py --out patches_<ver>.tsv
+usage: export_patches_morphe.py [--app naver|kakao|tmap] --out patches_<ver>.tsv
 Rows: every Site in src/dev/ubxbridge/morphe/NaverSites.kt (class, note, first anchor line, n) plus the hand-written
 sites of NaverPatch.kt listed in HAND below (keep HAND in sync when NaverPatch.kt gets a new hand site).
 Patch ids come from export_patches_naver.ID (class simple name -> inventory id; see docs/naver-rate-patch.md).
@@ -37,14 +37,37 @@ def kakao_rows():
     return rows
 
 
+TMAP = os.path.join(HERE, '..', 'patches', 'src', 'main', 'kotlin', 'app', 'kmaps', 'patches', 'tmap', 'TmapPatch.kt')
+
+
+def tmap_rows():
+    """TmapPatch.kt TMAP_SITES: cls = "$LOC/Cls;" (constants resolved) or "src:File.java"; id = first word of the note
+    (J1, J2, ...). The native libNavigationSDK.so entries are exported by scan_native_ida.py (PATCH rows)."""
+    kt = open(TMAP, encoding='utf-8').read()
+    consts = dict(re.findall(r'private const val (\w+) = "([^"]*)"', kt))
+
+    def res(v):          # Kotlin "$NAME" templates; '\$' is a literal dollar
+        parts = v.split('\\$')
+        return '$'.join(re.sub(r'\$(\w+)', lambda m: consts.get(m.group(1), m.group(0)), x) for x in parts)
+    rows, seen = [], {}
+    for m in re.finditer(r'cls = "([^"]+)", note = "([^"]*)".*?anchor = listOf\(\s*"((?:[^"\\]|\\.)*)"', kt, re.S):
+        cls, note, a0 = res(m.group(1)), m.group(2), res(m.group(3))
+        if cls.startswith('L') and cls.endswith(';'):
+            cls = cls[1:-1]
+        k = (cls, note, a0)
+        seen[k] = seen.get(k, 0) + 1
+        rows.append(('PATCH', cls, note, a0, str(seen[k]), note.split()[0]))
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', required=True)
     ap.add_argument('--sites', default=SITES)
-    ap.add_argument('--app', choices=['naver', 'kakao'], default='naver')
+    ap.add_argument('--app', choices=['naver', 'kakao', 'tmap'], default='naver')
     a = ap.parse_args()
-    if a.app == 'kakao':
-        rows = kakao_rows()
+    if a.app in ('kakao', 'tmap'):
+        rows = kakao_rows() if a.app == 'kakao' else tmap_rows()
         with open(a.out, 'w', encoding='utf-8', newline='\n') as o:
             o.write('kind\tclass\tdesc\tdetail\tn\tpatch_id\n')
             o.writelines('\t'.join(r) + '\n' for r in rows)
